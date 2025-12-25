@@ -69,7 +69,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ data }) => {
                 className="
           flex flex-row bg-white text-black shadow-2xl overflow-hidden
           w-[6in] h-[4in] min-w-[6in] min-h-[4in]
-          print:shadow-none print:break-after-page print:border-none border border-zinc-200
+          print:shadow-none print:border-none border border-zinc-200 mb-8 print:mb-2
         "
             >
                 {/* Left Half: Image */}
@@ -125,7 +125,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ data }) => {
                 className="
           flex flex-col bg-white text-black shadow-2xl overflow-hidden
           w-[6in] h-[4in] min-w-[6in] min-h-[4in]
-          print:shadow-none print:break-after-page print:border-none border border-zinc-200 p-5
+          print:shadow-none print:border-none border border-zinc-200 mb-8 print:mb-2 p-5
         "
             >
                 <div className="h-full flex flex-col">
