@@ -78,7 +78,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ data }) => {
                         <img
                             src={data.image}
                             alt={data.title}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-contain"
                         />
                     ) : (
                         <div className="text-gray-400 text-center p-4">

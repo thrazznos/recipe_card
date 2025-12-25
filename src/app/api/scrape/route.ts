@@ -87,9 +87,22 @@ export async function POST(req: NextRequest) {
             instructions = [recipeData.recipeInstructions];
         }
 
+        // Helper to extract image URL
+        const getImageUrl = (image: any): string | undefined => {
+            if (!image) return undefined;
+            if (typeof image === 'string') return image;
+            if (Array.isArray(image)) {
+                return getImageUrl(image[0]);
+            }
+            if (typeof image === 'object') {
+                return image.url || image.contentUrl || undefined;
+            }
+            return undefined;
+        };
+
         const cleanedData = {
             title: recipeData.name,
-            image: Array.isArray(recipeData.image) ? recipeData.image[0] : (recipeData.image?.url || recipeData.image),
+            image: getImageUrl(recipeData.image),
             description: recipeData.description,
             ingredients: ingredients,
             instructions: instructions,
