@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export interface RecipeData {
     title: string;
@@ -19,77 +19,137 @@ interface RecipeCardProps {
     data: RecipeData;
 }
 
+const AutoFitInstructionList = ({ instructions }: { instructions: string[] }) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [fontSize, setFontSize] = useState(10); // Start at 10px
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const resizeText = () => {
+            // Reset to max size to check if it fits now
+            // But for simplicity in this "shrink to fit" logic, we just check overflow
+            // If we want to support resizing window, we might need more complex logic.
+            // For now, let's just shrink.
+
+            let currentSize = 10;
+            container.style.fontSize = `${currentSize}px`;
+
+            // Loop down until it fits or hits min size
+            while (container.scrollHeight > container.clientHeight && currentSize > 6) {
+                currentSize -= 0.5;
+                container.style.fontSize = `${currentSize}px`;
+            }
+            setFontSize(currentSize);
+        };
+
+        resizeText();
+
+        // Optional: Re-run on window resize if the card size was fluid, 
+        // but here it is fixed 4in height, so maybe not strictly needed unless print mode changes things.
+    }, [instructions]);
+
+    return (
+        <div ref={containerRef} className="h-full overflow-hidden" style={{ fontSize: `${fontSize}px` }}>
+            <ol className="list-decimal pl-4 text-gray-900 leading-tight columns-2 gap-4" style={{ fontSize: 'em' }}>
+                {instructions.map((inst, idx) => (
+                    <li key={idx} className="mb-1 break-inside-avoid">{inst}</li>
+                ))}
+            </ol>
+        </div>
+    );
+};
+
 export const RecipeCard: React.FC<RecipeCardProps> = ({ data }) => {
     return (
-        <div className="flex justify-center">
-            {/* 
-        Container for the card. 
-        On screen: shadow, centering, fixed 4x6 aspect ratio roughly (scaled up for visibility).
-        On print: NO shadow, exact dimensions, no external margins.
-      */}
+        <div className="flex flex-col gap-8 items-center print:block print:gap-0">
+            {/* Front Card */}
             <div
                 className="
-          bg-white text-black p-8 shadow-2xl rounded-sm 
-          w-[600px] min-h-[400px] h-auto
-          print:shadow-none print:w-full print:max-w-[4in] print:h-auto print:p-4 print:mx-auto
-          relative overflow-hidden font-serif border border-zinc-200 print:border-none
+          flex flex-row bg-white text-black shadow-2xl overflow-hidden
+          w-[6in] h-[4in] min-w-[6in] min-h-[4in]
+          print:shadow-none print:break-after-page print:border-none border border-zinc-200
         "
-                style={{
-                    // Attempt to simulate 4x6 ratio or just fluid height
-                }}
             >
-                {/* Header */}
-                <div className="border-b-2 border-black pb-4 mb-4">
-                    <h2 className="text-2xl font-bold uppercase tracking-wider">{data.title}</h2>
-                    {data.yield && (
-                        <p className="text-sm italic mt-1 text-gray-600 print:text-black">
-                            Yields: {data.yield}
-                        </p>
+                {/* Left Half: Image */}
+                <div className="w-1/2 h-full relative bg-gray-100 flex items-center justify-center overflow-hidden">
+                    {data.image ? (
+                        <img
+                            src={data.image}
+                            alt={data.title}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="text-gray-400 text-center p-4">
+                            <span className="block text-4xl mb-2">📷</span>
+                            No Image Available
+                        </div>
                     )}
-                    <div className="flex gap-4 text-xs font-bold mt-2 uppercase">
+                </div>
+
+                {/* Right Half: Ingredients & Meta */}
+                <div className="w-1/2 h-full p-4 flex flex-col relative">
+                    <h2 className="text-lg font-bold leading-tight mb-2 uppercase tracking-wide line-clamp-2">
+                        {data.title}
+                    </h2>
+
+                    <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase text-gray-600 mb-3 border-b border-gray-200 pb-2">
                         {data.prepTime && <span>Prep: {data.prepTime.replace('PT', '').toLowerCase()}</span>}
                         {data.cookTime && <span>Cook: {data.cookTime.replace('PT', '').toLowerCase()}</span>}
+                        {data.yield && <span className="ml-auto">Yields: {data.yield}</span>}
                     </div>
-                </div>
 
-                {/* Content Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-2">
-                    {/* Ingredients */}
-                    <div>
-                        <h3 className="font-bold border-b border-gray-300 mb-2 text-sm uppercase">Ingredients</h3>
-                        <ul className="text-sm space-y-1 list-disc pl-4 text-gray-800 print:text-black">
-                            {data.ingredients.map((ing, idx) => (
-                                <li key={idx} className="leading-snug">{ing}</li>
+                    <div className="flex-grow overflow-hidden relative">
+                        <h3 className="font-bold text-xs uppercase mb-1 text-gray-800">Ingredients</h3>
+                        <ul className="text-[10px] space-y-1 list-disc pl-3 text-gray-900 leading-snug">
+                            {data.ingredients.slice(0, 15).map((ing, idx) => (
+                                <li key={idx} className="line-clamp-2">{ing}</li>
                             ))}
+                            {data.ingredients.length > 15 && (
+                                <li className="italic text-gray-500">...and {data.ingredients.length - 15} more</li>
+                            )}
                         </ul>
+                        {/* Fade out at bottom if too long */}
+                        <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
                     </div>
 
-                    {/* Instructions */}
-                    <div>
-                        <h3 className="font-bold border-b border-gray-300 mb-2 text-sm uppercase">Instructions</h3>
-                        <ol className="text-sm space-y-2 list-decimal pl-4 text-gray-800 print:text-black">
-                            {data.instructions.map((inst, idx) => (
-                                <li key={idx} className="leading-snug">{inst}</li>
-                            ))}
-                        </ol>
+                    <div className="mt-2 text-[8px] text-gray-400 text-right">
+                        Card 1/2 • Front
                     </div>
                 </div>
-
-                {/* Footer / Source */}
-                {data.url && (
-                    <div className="mt-8 pt-4 border-t border-gray-100 text-[10px] text-gray-400 text-center print:text-gray-600">
-                        Source: {new URL(data.url).hostname}
-                    </div>
-                )}
             </div>
 
-            {/* Print Instructions helper, visible only on screen */}
+            {/* Back Card */}
+            <div
+                className="
+          flex flex-col bg-white text-black shadow-2xl overflow-hidden
+          w-[6in] h-[4in] min-w-[6in] min-h-[4in]
+          print:shadow-none print:break-after-page print:border-none border border-zinc-200 p-5
+        "
+            >
+                <div className="h-full flex flex-col">
+                    <h3 className="font-bold text-sm uppercase border-b-2 border-black pb-1 mb-2">Preparation</h3>
+
+                    {/* Auto-scaling Instructions Container */}
+                    <div className="flex-grow overflow-hidden relative">
+                        <AutoFitInstructionList instructions={data.instructions} />
+                    </div>
+
+                    <div className="mt-1 text-[7px] text-gray-400 flex justify-between">
+                        <span>{new URL(data.url || "").hostname}</span>
+                        <span>Card 2/2 • Back</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Print Instructions helper */}
             <div className="fixed bottom-4 right-4 print:hidden">
                 <button
                     onClick={() => window.print()}
-                    className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-slate-700 transition"
+                    className="bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-slate-700 transition font-bold"
                 >
-                    🖨️ Print Card
+                    🖨️ Print Cards
                 </button>
             </div>
         </div>
