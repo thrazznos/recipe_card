@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         const $ = cheerio.load(html);
 
         // 3. Find LD+JSON data
-        let recipeData = null;
+        let recipeData: any = null;
 
         $('script[type="application/ld+json"]').each((_, element) => {
             try {
